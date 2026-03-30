@@ -57,17 +57,18 @@ const generateExactData = () => {
     const totalDays = Math.round((endDate - new Date('2021-10-01')) / (1000 * 60 * 60 * 24));
     const progress = i / totalDays;
 
-    // Multi-frequency oscillations to mimic real trading noise
+    // Multi-frequency oscillations — amplified for more realistic waviness
     const structuralNoise =
-      Math.sin(i * 0.18) * 0.25 +
-      Math.sin(i * 0.07) * 0.18 +
-      Math.cos(i * 0.11) * 0.12;
+      Math.sin(i * 0.22) * 0.55 +
+      Math.sin(i * 0.09) * 0.40 +
+      Math.cos(i * 0.14) * 0.30 +
+      Math.sin(i * 0.35) * 0.20;
 
-    // Small random daily perturbation
-    const randomJitter = (rand() - 0.5) * 0.35;
+    // Larger random daily perturbation
+    const randomJitter = (rand() - 0.5) * 0.90;
 
-    const totalNoiseCons = structuralNoise * 0.18 + randomJitter * 0.22;
-    const totalNoiseAgg  = structuralNoise * 0.30 + randomJitter * 0.38;
+    const totalNoiseCons = structuralNoise * 0.45 + randomJitter * 0.50;
+    const totalNoiseAgg  = structuralNoise * 0.70 + randomJitter * 0.80;
 
     // Trend curve scaled to final values
     const consTrend = Math.pow(progress, 1.5) * 10.43;
