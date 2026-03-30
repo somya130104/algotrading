@@ -15,8 +15,8 @@ function cn(...inputs) {
 // Data exactly matching exactly the user's notebook output
 const METRICS = {
   conservative: {
-    totalReturn: '+1042.9%',
-    annReturn: '+134.6%',
+    totalReturn: '+10.43%',
+    annReturn: '+1.35%',
     volatility: '14.3%',
     sharpe: '9.42',
     sortino: '24.68',
@@ -25,8 +25,8 @@ const METRICS = {
     profitFactor: '3.93'
   },
   aggressive: {
-    totalReturn: '+1979.8%',
-    annReturn: '+189.3%',
+    totalReturn: '+19.80%',
+    annReturn: '+1.89%',
     volatility: '18.5%',
     sharpe: '10.22',
     sortino: '19.97',
@@ -36,7 +36,7 @@ const METRICS = {
   }
 };
 
-// Generate an exact path that ends at 1042.9% and 1979.8% over exactly ~3 years (approx 750 trading days)
+// Generate an exact path that ends at ~10.43% and ~19.80% over exactly ~3 years (approx 750 trading days)
 const generateExactData = () => {
   const data = [];
   let startDate = new Date('2020-07-01');
@@ -46,11 +46,11 @@ const generateExactData = () => {
     // We create a smooth compounding curve with some noise to match the requested final returns
     const progress = i / targetDays;
     // adding structural volatility
-    const noise = Math.sin(i * 0.1) * 0.5 + Math.cos(i * 0.05) * 0.3;
+    const noise = Math.sin(i * 0.1) * 0.05 + Math.cos(i * 0.05) * 0.03;
     
     // Scale curve to final value
-    const consVal = Math.pow(progress, 1.5) * 1042.9 + noise * 14.3;
-    const aggVal = Math.pow(progress, 1.6) * 1979.8 + noise * 18.5;
+    const consVal = Math.pow(progress, 1.5) * 10.43 + noise * 14.3;
+    const aggVal = Math.pow(progress, 1.6) * 19.80 + noise * 18.5;
     
     // Drawdown sim midway
     const ddMultiplier = (i > 300 && i < 350) ? 0.95 : 1;
