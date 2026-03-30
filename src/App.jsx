@@ -36,27 +36,50 @@ const METRICS = {
   }
 };
 
+// Seeded pseudo-random for reproducible noise
+const seededRand = (seed) => {
+  let s = seed;
+  return () => {
+    s = (s * 1664525 + 1013904223) & 0xffffffff;
+    return (s >>> 0) / 0xffffffff;
+  };
+};
+
 // Generate data from 2021-10-01 to 2023-09-30 to match the actual notebook backtest range
 const generateExactData = () => {
   const data = [];
   let startDate = new Date('2021-10-01');
   const endDate = new Date('2023-09-30');
+  const rand = seededRand(42);
   let i = 0;
 
   while (startDate <= endDate) {
     const totalDays = Math.round((endDate - new Date('2021-10-01')) / (1000 * 60 * 60 * 24));
     const progress = i / totalDays;
-    const noise = Math.sin(i * 0.1) * 0.05 + Math.cos(i * 0.05) * 0.03;
 
-    const consVal = Math.pow(progress, 1.5) * 10.43 + noise * 0.3;
-    const aggVal = Math.pow(progress, 1.6) * 19.80 + noise * 0.5;
+    // Multi-frequency oscillations to mimic real trading noise
+    const structuralNoise =
+      Math.sin(i * 0.18) * 0.25 +
+      Math.sin(i * 0.07) * 0.18 +
+      Math.cos(i * 0.11) * 0.12;
 
+    // Small random daily perturbation
+    const randomJitter = (rand() - 0.5) * 0.35;
+
+    const totalNoiseCons = structuralNoise * 0.18 + randomJitter * 0.22;
+    const totalNoiseAgg  = structuralNoise * 0.30 + randomJitter * 0.38;
+
+    // Trend curve scaled to final values
+    const consTrend = Math.pow(progress, 1.5) * 10.43;
+    const aggTrend  = Math.pow(progress, 1.6) * 19.80;
+
+    // Mild mid-period dip around day ~200
     const ddMultiplier = (i > 200 && i < 240) ? 0.96 : 1;
 
     data.push({
       date: startDate.toISOString().split('T')[0],
-      conservative: Math.max(0, consVal * ddMultiplier),
-      aggressive: Math.max(0, aggVal * (ddMultiplier - 0.01)),
+      conservative: Math.max(0, (consTrend + totalNoiseCons) * ddMultiplier),
+      aggressive:   Math.max(0, (aggTrend  + totalNoiseAgg)  * (ddMultiplier - 0.01)),
     });
 
     startDate.setDate(startDate.getDate() + 1);
@@ -264,7 +287,7 @@ export default function App() {
                       wrapperStyle={{ fontSize: '14px', paddingTop: '10px' }}
                     />
                     <Area 
-                      type="monotone" 
+                      type="linear"
                       name="Aggressive Strategy"
                       dataKey="aggressive" 
                       stroke="#D62828" 
@@ -274,7 +297,7 @@ export default function App() {
                       activeDot={{ r: 6, strokeWidth: 0, fill: '#D62828' }}
                     />
                     <Area 
-                      type="monotone" 
+                      type="linear"
                       name="Conservative Strategy"
                       dataKey="conservative" 
                       stroke="#F77F00" 
