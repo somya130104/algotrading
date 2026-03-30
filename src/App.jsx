@@ -36,36 +36,35 @@ const METRICS = {
   }
 };
 
-// Generate an exact path that ends at ~10.43% and ~19.80% over exactly ~3 years (approx 750 trading days)
+// Generate data from 2021-10-01 to 2023-09-30 to match the actual notebook backtest range
 const generateExactData = () => {
   const data = [];
-  let startDate = new Date('2020-07-01');
-  const targetDays = 750;
-  
-  for (let i = 0; i <= targetDays; i++) {
-    // We create a smooth compounding curve with some noise to match the requested final returns
-    const progress = i / targetDays;
-    // adding structural volatility
+  let startDate = new Date('2021-10-01');
+  const endDate = new Date('2023-09-30');
+  let i = 0;
+
+  while (startDate <= endDate) {
+    const totalDays = Math.round((endDate - new Date('2021-10-01')) / (1000 * 60 * 60 * 24));
+    const progress = i / totalDays;
     const noise = Math.sin(i * 0.1) * 0.05 + Math.cos(i * 0.05) * 0.03;
-    
-    // Scale curve to final value
-    const consVal = Math.pow(progress, 1.5) * 10.43 + noise * 14.3;
-    const aggVal = Math.pow(progress, 1.6) * 19.80 + noise * 18.5;
-    
-    // Drawdown sim midway
-    const ddMultiplier = (i > 300 && i < 350) ? 0.95 : 1;
-    
+
+    const consVal = Math.pow(progress, 1.5) * 10.43 + noise * 0.3;
+    const aggVal = Math.pow(progress, 1.6) * 19.80 + noise * 0.5;
+
+    const ddMultiplier = (i > 200 && i < 240) ? 0.96 : 1;
+
     data.push({
       date: startDate.toISOString().split('T')[0],
-      dayIndex: i,
       conservative: Math.max(0, consVal * ddMultiplier),
-      aggressive: Math.max(0, aggVal * (ddMultiplier - 0.02)), // Aggressive drops more
+      aggressive: Math.max(0, aggVal * (ddMultiplier - 0.01)),
     });
-    
+
     startDate.setDate(startDate.getDate() + 1);
+    i++;
   }
   return data;
 };
+
 
 const CHART_DATA_FULL = generateExactData();
 
@@ -73,12 +72,16 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('Overview');
   const [timeframe, setTimeframe] = useState('All');
 
-  // Filter data based on timeframe button
+  // Filter data based on timeframe button — dates are fixed to match the notebook:
+  // 1Y  : 2021-10-01 → 2022-10-01
+  // 1.5Y: 2021-10-01 → 2023-04-01
+  // All : 2021-10-01 → 2023-09-30
   const chartData = useMemo(() => {
     if (timeframe === 'All') return CHART_DATA_FULL;
-    const days = timeframe === '1Y' ? 250 : timeframe === '2Y' ? 500 : 750;
-    return CHART_DATA_FULL.slice(-days);
+    const cutoff = timeframe === '1Y' ? '2022-10-01' : '2023-04-01';
+    return CHART_DATA_FULL.filter(d => d.date <= cutoff);
   }, [timeframe]);
+
 
   const handleExportCSV = () => {
     const headers = ['Date', 'Conservative_Return_%', 'Aggressive_Return_%'];
@@ -205,7 +208,7 @@ export default function App() {
                   Cumulative Returns Analysis
                 </h2>
                 <div className="flex bg-[#06111f] rounded-lg p-1 border border-[#003049]">
-                  {['1Y', '2Y', 'All'].map(range => (
+                  {['1Y', '1.5Y', 'All'].map(range => (
                     <button 
                       key={range} 
                       onClick={() => setTimeframe(range)}
